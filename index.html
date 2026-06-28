@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FSAS v2.1 — Forensic Signature Analysis System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d0d0d;
+  --surface:  #141414;
+  --panel:    #1a1a1a;
+  --border:   #2a2a2a;
+  --border2:  #333;
+  --amber:    #e8a020;
+  --amber-dim:#7a5010;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --blue:     #3b82f6;
+  --text:     #e8e8e8;
+  --sub:      #888;
+  --muted:    #555;
+  --font-mono:'IBM Plex Mono', monospace;
+  --font-sans:'IBM Plex Sans', sans-serif;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 42px;
+  background: #0a0a0a;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.sys-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.topbar-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border2);
+}
+.sys-desc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.amber   { background: var(--amber); }
+
+/* ── LAYOUT ── */
+.layout {
+  display: flex;
+  height: calc(100vh - 42px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-section {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 14px 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  font-size: 12px;
+  color: var(--sub);
+  font-weight: 500;
+}
+.nav-item:hover { background: var(--panel); color: var(--text); }
+.nav-item.active {
+  background: #1e1a0e;
+  color: var(--amber);
+  border-left-color: var(--amber);
+}
+.nav-icon {
+  width: 14px; height: 14px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+
+.sidebar-info {
+  margin-top: auto;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.info-key {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.info-val {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--amber);
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+.main::-webkit-scrollbar { width: 4px; }
+.main::-webkit-scrollbar-track { background: var(--bg); }
+.main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── PAGE ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.sec-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ── METRIC ROW ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.metric {
+  background: var(--surface);
+  padding: 14px 16px;
+}
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.metric-lbl {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.panel-hdr {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+}
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sub);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.panel-body { padding: 14px; }
+
+/* ── FORM CONTROLS ── */
+.field { margin-bottom: 12px; }
+.field-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  display: block;
+  margin-bottom: 5px;
+}
+select, input[type=text] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+}
+select:focus, input[type=text]:focus {
+  border-color: var(--amber-dim);
+}
+select option { background: var(--bg); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── CANVAS ── */
+.cv-panel {
+  background: #080808;
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: crosshair;
+  margin-bottom: 10px;
+}
+.cv-panel:focus-within,
+.cv-panel.drawing {
+  border-color: var(--amber-dim);
+  box-shadow: inset 0 0 20px #e8a02005;
+}
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 180px !important;
+}
+.cv-overlay {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.cv-overlay-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.cv-overlay-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--border2);
+  margin-top: 3px;
+}
+.cv-label {
+  position: absolute;
+  top: 6px; left: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.cv-counter {
+  position: absolute;
+  top: 6px; right: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--amber-dim);
+  letter-spacing: 1px;
+}
+
+/* ── BUTTONS ── */
+.btn-row { display: flex; gap: 8px; }
+.btn {
+  padding: 8px 16px;
+  border: 1px solid;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+}
+.btn-run {
+  border-color: var(--amber);
+  color: var(--amber);
+  flex: 2;
+}
+.btn-run:hover { background: var(--amber); color: #000; }
+.btn-clr {
+  border-color: var(--border2);
+  color: var(--muted);
+  flex: 1;
+}
+.btn-clr:hover { border-color: var(--sub); color: var(--text); }
+.btn-enroll {
+  border-color: var(--green);
+  color: var(--green);
+  flex: 2;
+}
+.btn-enroll:hover { background: var(--green); color: #000; }
+.btn-verify {
+  border-color: var(--blue);
+  color: var(--blue);
+  flex: 2;
+}
+.btn-verify:hover { background: var(--blue); color: #fff; }
+
+/* ── PROGRESS ── */
+.prog-bar {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.prog-seg {
+  flex: 1; height: 3px;
+  background: var(--border);
+  transition: all 0.3s;
+}
+.prog-seg.done { background: var(--green); }
+.prog-seg.active { background: var(--amber); }
+
+/* ── SPINNER ── */
+.spin-row {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+.spin-ring {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
+/* ── RESULT ── */
+.result {
+  display: none;
+  border: 1px solid var(--border);
+  margin-top: 12px;
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+.result.genuine  { border-color: #22c55e55; }
+.result.forged   { border-color: #ef444455; }
+.result.uncertain{ border-color: #f59e0b55; }
+
+.result-banner {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.genuine  .result-banner { background: #0d1f10; }
+.forged   .result-banner { background: #1f0d0d; }
+.uncertain .result-banner{ background: #1f1a0d; }
+
+.verdict-text {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.genuine  .verdict-text { color: var(--green); }
+.forged   .verdict-text { color: var(--red);   }
+.uncertain .verdict-text{ color: #f59e0b;      }
+
+.verdict-meta {
+  text-align: right;
+}
+.conf-num {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+}
+.genuine  .conf-num { color: var(--green); }
+.forged   .conf-num { color: var(--red);   }
+.uncertain .conf-num{ color: #f59e0b;      }
+.conf-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.result-body { padding: 14px 16px; border-top: 1px solid var(--border); }
+.result-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid var(--border2);
+  color: var(--sub);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.tag.ok    { border-color: #22c55e44; color: #22c55e; background: #22c55e08; }
+.tag.fail  { border-color: #ef444444; color: #ef4444; background: #ef444408; }
+.tag.warn  { border-color: #f59e0b44; color: #f59e0b; background: #f59e0b08; }
+.tag.info  { border-color: #3b82f644; color: #3b82f6; background: #3b82f608; }
+
+.result-reason {
+  font-size: 11px;
+  color: var(--sub);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border-left: 2px solid var(--border2);
+  font-family: var(--font-mono);
+}
+
+/* Feature table */
+.feat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.feat-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+.feat-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1e1e1e;
+  color: var(--sub);
+  vertical-align: middle;
+}
+.feat-table tr:last-child td { border-bottom: none; }
+.feat-table tr:hover td { background: var(--panel); color: var(--text); }
+.feat-val { color: var(--text) !important; font-weight: 500; }
+.bar-cell { width: 80px; }
+.mini-bar {
+  height: 4px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+/* Signature canvases */
+.sig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sig-mini {
+  background: #080808;
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+.sig-mini-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.sig-mini canvas {
+  height: 90px !important;
+}
+
+/* Enroll status */
+.enroll-log {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--green);
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  display: none;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  padding: 8px 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 1px;
+  z-index: 999;
+  display: none;
+  white-space: nowrap;
+}
+
+/* Scrollbar for main */
+.main::-webkit-scrollbar { width: 3px; }
+.main::-webkit-scrollbar-thumb { background: var(--border2); }
+
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .sig-grid { grid-template-columns: 1fr; }
+  .feat-table .bar-cell { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="sys-id">FSAS v2.1</div>
+    <div class="topbar-divider"></div>
+    <div class="sys-desc">FORENSIC SIGNATURE ANALYSIS SYSTEM</div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-item">
+      <div class="status-dot online"></div>
+      MODEL ACTIVE
+    </div>
+    <div class="status-item">
+      <div class="status-dot amber"></div>
+      SVC2004 TASK-II
+    </div>
+    <div class="status-item" id="clockEl" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);">
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Analysis Modules</div>
+      <div class="nav-item active" onclick="switchPage(0,this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/>
+        </svg>
+        Dataset Analysis
+      </div>
+      <div class="nav-item" onclick="switchPage(1,this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm0 2a3 3 0 100 6 3 3 0 000-6z"/>
+        </svg>
+        Live Detection
+      </div>
+      <div class="nav-item" onclick="switchPage(2,this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a3 3 0 100 6 3 3 0 000-6zM3 14a5 5 0 0110 0H3z"/>
+        </svg>
+        Biometric Enroll
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Dataset</div>
+      <div class="nav-item" style="cursor:default;opacity:0.6;font-size:10px;">
+        Users: 40
+      </div>
+      <div class="nav-item" style="cursor:default;opacity:0.6;font-size:10px;">
+        Signatures: 1,600
+      </div>
+      <div class="nav-item" style="cursor:default;opacity:0.6;font-size:10px;">
+        Features: 12
+      </div>
+    </div>
+
+    <div class="sidebar-info">
+      <div class="info-row">
+        <span class="info-key">Accuracy</span>
+        <span class="info-val">84.4%</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">AUC</span>
+        <span class="info-val">0.997</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">FAR</span>
+        <span class="info-val">0.300</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">FRR</span>
+        <span class="info-val">0.013</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PAGE 0: DATASET ANALYSIS -->
+    <div class="page active" id="page0">
+      <div class="sec-hdr">
+        <div class="sec-title">Dataset Signature Verification</div>
+        <div class="sec-meta">SVC2004 / Task-II / Per-User Model</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-val">40</div>
+          <div class="metric-lbl">Enrolled Users</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">1,600</div>
+          <div class="metric-lbl">Total Signatures</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">84.4%</div>
+          <div class="metric-lbl">Model Accuracy</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">0.997</div>
+          <div class="metric-lbl">ROC-AUC Score</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">Query Parameters</div>
+          <div class="sec-meta">Select user and signature index</div>
+        </div>
+        <div class="panel-body">
+          <div class="two-col">
+            <div class="field">
+              <label class="field-label">User ID</label>
+              <select id="dsUser">
+                {% for u in users %}
+                <option value="{{u}}">USER_{{u|string|zfill(3)}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Signature Index</label>
+              <select id="dsSig">
+                <optgroup label="GENUINE — S001 to S020">
+                  {% for i in range(1,21) %}
+                  <option value="{{i}}">SIG_{{i|string|zfill(3)}} — GENUINE</option>
+                  {% endfor %}
+                </optgroup>
+                <optgroup label="FORGED — S021 to S040">
+                  {% for i in range(21,41) %}
+                  <option value="{{i}}">SIG_{{i|string|zfill(3)}} — FORGED</option>
+                  {% endfor %}
+                </optgroup>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-run" onclick="verifyDataset()">Run Analysis</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spin-row" id="spin0" style="display:none;">
+        <div class="spin-ring"></div>
+        <div class="spin-text">LOADING SIGNATURE DATA — RUNNING CLASSIFIERS...</div>
+      </div>
+
+      <div class="result" id="res0">
+        <div class="result-banner">
+          <div class="verdict-text" id="verd0"></div>
+          <div class="verdict-meta">
+            <div class="conf-num" id="conf0"></div>
+            <div class="conf-label">Confidence</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="result-row" id="tags0"></div>
+          <div class="result-reason" id="reas0"></div>
+          <table class="feat-table" id="tbl0"></table>
+          <div class="sig-grid" id="sigPrev0"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 1: LIVE DETECTION -->
+    <div class="page" id="page1">
+      <div class="sec-hdr">
+        <div class="sec-title">Live Behavioral Pattern Detection</div>
+        <div class="sec-meta">Global Model / SVC2004 Training Baseline</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">Signature Input</div>
+          <div class="sec-meta">Draw signature in capture area</div>
+        </div>
+        <div class="panel-body">
+          <div class="cv-panel" id="wA">
+            <canvas id="cvA"></canvas>
+            <div class="cv-label">INPUT CHANNEL A</div>
+            <div class="cv-counter" id="cntA">0 PTS</div>
+            <div class="cv-overlay" id="phA">
+              <div class="cv-overlay-text">AWAITING INPUT</div>
+              <div class="cv-overlay-sub">Draw signature to begin analysis</div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-clr" onclick="clr('A')">Clear</button>
+            <button class="btn btn-run" onclick="analyze()">Run Detection</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="spin-row" id="spin1" style="display:none;">
+        <div class="spin-ring"></div>
+        <div class="spin-text">EXTRACTING FEATURES — RUNNING ANOMALY DETECTION...</div>
+      </div>
+
+      <div class="result" id="res1">
+        <div class="result-banner">
+          <div class="verdict-text" id="verd1"></div>
+          <div class="verdict-meta">
+            <div class="conf-num"  id="conf1"></div>
+            <div class="conf-label">Confidence</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="result-row" id="tags1"></div>
+          <div class="result-reason" id="reas1"></div>
+          <table class="feat-table" id="tbl1"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: BIOMETRIC ENROLL -->
+    <div class="page" id="page2">
+      <div class="sec-hdr">
+        <div class="sec-title">Biometric Enrollment & Verification</div>
+        <div class="sec-meta">Personal Model / 5-Sample Minimum</div>
+      </div>
+
+      <div class="two-col">
+
+        <!-- ENROLL -->
+        <div>
+          <div class="panel">
+            <div class="panel-hdr">
+              <div class="panel-title">Enrollment</div>
+            </div>
+            <div class="panel-body">
+              <div class="field">
+                <label class="field-label">Subject Name</label>
+                <input type="text" id="eName" placeholder="Enter subject identifier..."/>
+              </div>
+              <div class="field">
+                <label class="field-label">Sample Collection — <span id="sNum">1</span>/5</label>
+                <div class="prog-bar" id="progRow">
+                  <div class="prog-seg active" id="ps0"></div>
+                  <div class="prog-seg" id="ps1"></div>
+                  <div class="prog-seg" id="ps2"></div>
+                  <div class="prog-seg" id="ps3"></div>
+                  <div class="prog-seg" id="ps4"></div>
+                </div>
+                <div class="cv-panel" id="wB">
+                  <canvas id="cvB"></canvas>
+                  <div class="cv-label">ENROLL CHANNEL</div>
+                  <div class="cv-counter" id="cntB">0 PTS</div>
+                  <div class="cv-overlay" id="phB">
+                    <div class="cv-overlay-text">AWAITING INPUT</div>
+                    <div class="cv-overlay-sub">Sign naturally</div>
+                  </div>
+                </div>
+              </div>
+              <div class="enroll-log" id="eLog"></div>
+              <div class="btn-row">
+                <button class="btn btn-clr"    onclick="clr('B')">Clear</button>
+                <button class="btn btn-enroll" onclick="doEnroll()">Save Sample</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VERIFY -->
+        <div>
+          <div class="panel">
+            <div class="panel-hdr">
+              <div class="panel-title">Verification</div>
+            </div>
+            <div class="panel-body">
+              <div class="field">
+                <label class="field-label">Subject</label>
+                <select id="vUser">
+                  <option value="">-- Select enrolled subject --</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Verification Signature</label>
+                <div class="cv-panel" id="wC">
+                  <canvas id="cvC"></canvas>
+                  <div class="cv-label">VERIFY CHANNEL</div>
+                  <div class="cv-counter" id="cntC">0 PTS</div>
+                  <div class="cv-overlay" id="phC">
+                    <div class="cv-overlay-text">AWAITING INPUT</div>
+                    <div class="cv-overlay-sub">Draw signature to verify</div>
+                  </div>
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-clr"    onclick="clr('C')">Clear</button>
+                <button class="btn btn-verify" onclick="doVerify()">Verify Identity</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="spin-row" id="spin2" style="display:none;">
+            <div class="spin-ring"></div>
+            <div class="spin-text">RUNNING PERSONAL MODEL...</div>
+          </div>
+
+          <div class="result" id="res2">
+            <div class="result-banner">
+              <div class="verdict-text" id="verd2"></div>
+              <div class="verdict-meta">
+                <div class="conf-num"  id="conf2"></div>
+                <div class="conf-label">Confidence</div>
+              </div>
+            </div>
+            <div class="result-body">
+              <div class="result-row" id="tags2"></div>
+              <div class="result-reason" id="reas2"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════ CLOCK ════
+function tick(){
+  const n=new Date();
+  document.getElementById('clockEl').textContent=
+    n.toLocaleTimeString('en-GB',{hour12:false})+' UTC';
+}
+tick(); setInterval(tick,1000);
+
+// ════ CANVAS ENGINE ════
+const PTS={A:[],B:[],C:[]};
+const CVS={};
+
+function initCv(id){
+  const cv  = document.getElementById('cv'+id);
+  const ctx = cv.getContext('2d');
+  const wrap= document.getElementById('w'+id);
+  const cnt = document.getElementById('cnt'+id);
+
+  const colors={A:'#e8a020',B:'#22c55e',C:'#3b82f6'};
+
+  function resize(){
+    const r=wrap.getBoundingClientRect();
+    cv.width=r.width; cv.height=r.height||180;
+    ctx.strokeStyle=colors[id];
+    ctx.lineWidth=1.8; ctx.lineCap='round'; ctx.lineJoin='round';
+  }
+  setTimeout(resize,100);
+  window.addEventListener('resize',resize);
+
+  let down=false;
+
+  function gp(e){
+    const r=cv.getBoundingClientRect();
+    const s=e.touches?e.touches[0]:e;
+    return{
+      x:(s.clientX-r.left)*(cv.width/r.width),
+      y:(s.clientY-r.top)*(cv.height/r.height),
+      p:e.touches?(e.touches[0].force||0.5):0.5
+    };
+  }
+
+  function start(e){
+    e.preventDefault(); down=true;
+    wrap.classList.add('drawing');
+    document.getElementById('ph'+id).style.opacity='0';
+    const p=gp(e);
+    ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    PTS[id].push({x:p.x,y:p.y,timestamp:Date.now(),
+      pressure:Math.round(p.p*800+200),button:1});
+  }
+  function move(e){
+    e.preventDefault(); if(!down)return;
+    const p=gp(e);
+    ctx.lineTo(p.x,p.y); ctx.stroke();
+    PTS[id].push({x:p.x,y:p.y,timestamp:Date.now(),
+      pressure:Math.round(p.p*800+200),button:1});
+    if(cnt) cnt.textContent=PTS[id].length+' PTS';
+  }
+  function end(e){
+    e.preventDefault(); down=false;
+    wrap.classList.remove('drawing');
+    ctx.beginPath();
+  }
+
+  cv.addEventListener('mousedown',start);
+  cv.addEventListener('mousemove',move);
+  cv.addEventListener('mouseup',end);
+  cv.addEventListener('mouseleave',end);
+  cv.addEventListener('touchstart',start,{passive:false});
+  cv.addEventListener('touchmove',move,{passive:false});
+  cv.addEventListener('touchend',end,{passive:false});
+
+  CVS[id]={cv,ctx,resize};
+}
+
+function clr(id){
+  const{cv,ctx}=CVS[id];
+  ctx.clearRect(0,0,cv.width,cv.height);
+  PTS[id]=[];
+  document.getElementById('ph'+id).style.opacity='1';
+  const cnt=document.getElementById('cnt'+id);
+  if(cnt) cnt.textContent='0 PTS';
+  if(id==='A'){hide('res1');hide('spin1');}
+  if(id==='C'){hide('res2');hide('spin2');}
+}
+
+window.addEventListener('load',()=>{
+  initCv('A'); initCv('B'); initCv('C');
+});
+
+// ════ HELPERS ════
+function show(id){const e=document.getElementById(id);if(e)e.style.display='flex';}
+function hide(id){const e=document.getElementById(id);if(e)e.style.display='none';}
+function showB(id){const e=document.getElementById(id);if(e)e.style.display='block';}
+
+function toast(msg,dur=2600){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',dur);
+}
+
+function switchPage(i,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page'+i).classList.add('active');
+  el.classList.add('active');
+  if(i===2) refreshUsers();
+  setTimeout(()=>{
+    Object.values(CVS).forEach(c=>c.resize&&c.resize());
+  },80);
+}
+
+// ════ FEATURE TABLE ════
+function makeFeatTable(rows){
+  // rows: [{label, value, expected, note, ok}]
+  let h=`<thead><tr>
+    <th>Feature</th><th>Measured</th><th>Baseline</th><th>Bar</th><th>Status</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const pct=Math.min(100,Math.max(5,r.pct||50));
+    const barColor=r.ok?'#22c55e':r.warn?'#f59e0b':'#ef4444';
+    h+=`<tr>
+      <td>${r.label}</td>
+      <td class="feat-val">${r.value}</td>
+      <td>${r.expected}</td>
+      <td class="bar-cell">
+        <div class="mini-bar">
+          <div class="mini-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+        </div>
+      </td>
+      <td><span class="tag ${r.ok?'ok':r.warn?'warn':'fail'}">${r.ok?'NORMAL':r.warn?'BORDERLINE':'ANOMALOUS'}</span></td>
+    </tr>`;
+  });
+  h+=`</tbody>`;
+  return h;
+}
+
+// ════ PAGE 0: DATASET VERIFICATION ════
+async function verifyDataset(){
+  const uid=document.getElementById('dsUser').value;
+  const sid=document.getElementById('dsSig').value;
+  hide('res0'); show('spin0');
+  try{
+    const r=await fetch('/verify_dataset',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:uid,sig_id:sid})
+    });
+    const d=await r.json();
+    hide('spin0');
+    if(d.error){toast('ERROR: '+d.error);return;}
+
+    const box=document.getElementById('res0');
+    box.className='result '+d.color; showB('res0');
+
+    document.getElementById('verd0').textContent=d.verdict;
+    document.getElementById('conf0').textContent=d.confidence+'%';
+    document.getElementById('reas0').textContent=
+      `Ground truth: ${d.true_label===0?'GENUINE':'FORGED'} | Prediction: ${d.verdict} | ${d.correct?'CORRECT CLASSIFICATION':'INCORRECT CLASSIFICATION'}`;
+
+    const t0=`
+      <span class="tag ${d.correct?'ok':'fail'}">${d.correct?'CORRECT':'INCORRECT'}</span>
+      <span class="tag info">IF: ${d.iso_result}</span>
+      <span class="tag info">SVM: ${d.svm_result}</span>
+      <span class="tag">Score: ${d.iso_score}</span>
+      <span class="tag">User ${uid} / Sig ${sid}</span>
+    `;
+    document.getElementById('tags0').innerHTML=t0;
+
+    const rows=Object.entries(d.analysis).map(([k,v])=>({
+      label: k.replace(/_/g,' ').toUpperCase(),
+      value: v.value,
+      expected: `G:${v.genuine_mean} F:${v.forged_mean}`,
+      ok: v.closer_to==='genuine',
+      warn: false,
+      pct: Math.min(100,Math.max(5,50+(v.z_score||0)*10))
+    }));
+    document.getElementById('tbl0').innerHTML=makeFeatTable(rows);
+
+    // Draw previews
+    const sd=d.sig_data;
+    document.getElementById('sigPrev0').innerHTML=`
+      <div class="sig-mini">
+        <div class="sig-mini-label">Signature Path — ${d.true_label===0?'GENUINE':'FORGED'}</div>
+        <canvas id="pCv0" width="400" height="90"></canvas>
+      </div>
+      <div class="sig-mini">
+        <div class="sig-mini-label">Pressure Distribution</div>
+        <canvas id="pCv1" width="400" height="90"></canvas>
+      </div>`;
+
+    setTimeout(()=>drawPreview(sd,d.true_label),80);
+  }catch(e){hide('spin0');toast('ERROR: '+e.message);}
+}
+
+function drawPreview(sd,label){
+  const xs=sd.x,ys=sd.y,ps=sd.pressure;
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const minP=Math.min(...ps),maxP=Math.max(...ps);
+  const pad=8;
+
+  // Signature path
+  const pc=document.getElementById('pCv0');
+  if(!pc) return;
+  const pr=pc.getBoundingClientRect();
+  pc.width=pr.width; pc.height=pr.height||90;
+  const ctx=pc.getContext('2d');
+  const sc=Math.min((pc.width-pad*2)/(maxX-minX||1),(pc.height-pad*2)/(maxY-minY||1));
+
+  ctx.strokeStyle=label===0?'#22c55e':'#ef4444';
+  ctx.lineWidth=1.5; ctx.lineCap='round';
+  ctx.beginPath();
+  xs.forEach((x,i)=>{
+    const px=pad+(x-minX)*sc;
+    const py=pad+(ys[i]-minY)*sc;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+
+  // Pressure heatmap
+  const hc=document.getElementById('pCv1');
+  if(!hc) return;
+  const hr=hc.getBoundingClientRect();
+  hc.width=hr.width; hc.height=hr.height||90;
+  const hctx=hc.getContext('2d');
+  xs.forEach((x,i)=>{
+    const px=pad+(x-minX)*sc;
+    const py=pad+(ys[i]-minY)*sc;
+    const pn=(ps[i]-minP)/(maxP-minP||1);
+    const rv=Math.round(pn*220+35);
+    const bv=Math.round((1-pn)*180+35);
+    hctx.beginPath();
+    hctx.arc(px,py,1.5,0,Math.PI*2);
+    hctx.fillStyle=`rgb(${rv},${Math.round(pn*60)},${bv})`;
+    hctx.fill();
+  });
+}
+
+// ════ PAGE 1: LIVE DETECTION ════
+async function analyze(){
+  if(PTS.A.length<20){toast('INSUFFICIENT DATA — Draw a complete signature');return;}
+  hide('res1'); show('spin1');
+  try{
+    const r=await fetch('/detect_pattern',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({points:PTS.A})
+    });
+    const d=await r.json();
+    hide('spin1');
+    if(d.error){toast('ERROR: '+d.error);return;}
+
+    const box=document.getElementById('res1');
+    box.className='result '+d.color; showB('res1');
+    document.getElementById('verd1').textContent=d.verdict;
+    document.getElementById('conf1').textContent=d.confidence+'%';
+    document.getElementById('reas1').textContent=d.reason;
+
+    document.getElementById('tags1').innerHTML=`
+      <span class="tag info">IF: ${d.iso_result}</span>
+      <span class="tag info">SVM: ${d.svm_result}</span>
+      <span class="tag">Score: ${d.iso_score}</span>
+      ${d.suspicious.length?`<span class="tag warn">FLAGS: ${d.suspicious.join(' / ')}</span>`:''}
+    `;
+
+    const rows=Object.entries(d.analysis).map(([k,v])=>({
+      label: k.replace(/_/g,' ').toUpperCase(),
+      value: v.value,
+      expected: v.expected,
+      ok: !v.flag,
+      warn: false,
+      pct: Math.min(100,Math.max(5,50-v.z_score*8))
+    }));
+    document.getElementById('tbl1').innerHTML=makeFeatTable(rows);
+  }catch(e){hide('spin1');toast('ERROR: '+e.message);}
+}
+
+// ════ PAGE 2: ENROLL ════
+let ec=0;
+async function doEnroll(){
+  const name=document.getElementById('eName').value.trim();
+  if(!name){toast('FIELD REQUIRED: Subject name');return;}
+  if(PTS.B.length<20){toast('INSUFFICIENT DATA — Draw signature');return;}
+  try{
+    const r=await fetch('/enroll',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:name,points:PTS.B})
+    });
+    const d=await r.json();
+    if(d.error){toast('ERROR: '+d.error);return;}
+
+    const lg=document.getElementById('eLog');
+    lg.style.display='block'; lg.textContent=d.message.toUpperCase();
+    ec=d.count; updateProg(ec); clr('B');
+
+    if(d.status==='trained'){
+      toast('ENROLLMENT COMPLETE — Subject model trained');
+      refreshUsers(); ec=0; updateProg(0);
+      document.getElementById('sNum').textContent='1';
+    } else {
+      document.getElementById('sNum').textContent=String(ec+1);
+    }
+  }catch(e){toast('ERROR: '+e.message);}
+}
+
+function updateProg(n){
+  for(let i=0;i<5;i++){
+    const s=document.getElementById('ps'+i);
+    s.className='prog-seg';
+    if(i<n) s.classList.add('done');
+    else if(i===n) s.classList.add('active');
+  }
+}
+
+async function refreshUsers(){
+  const r=await fetch('/get_users');
+  const d=await r.json();
+  const sel=document.getElementById('vUser');
+  sel.innerHTML='<option value="">-- Select enrolled subject --</option>';
+  d.users.forEach(u=>{
+    const o=document.createElement('option');
+    o.value=u; o.textContent=u.toUpperCase(); sel.appendChild(o);
+  });
+}
+
+async function doVerify(){
+  const u=document.getElementById('vUser').value;
+  if(!u){toast('SELECT A SUBJECT');return;}
+  if(PTS.C.length<20){toast('INSUFFICIENT DATA — Draw signature');return;}
+  hide('res2'); show('spin2');
+  try{
+    const r=await fetch('/verify_personal',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,points:PTS.C})
+    });
+    const d=await r.json();
+    hide('spin2');
+    if(d.error){toast('ERROR: '+d.error);return;}
+
+    const box=document.getElementById('res2');
+    box.className='result '+d.color; showB('res2');
+    document.getElementById('verd2').textContent=d.verdict;
+    document.getElementById('conf2').textContent=d.confidence+'%';
+    document.getElementById('reas2').textContent=d.reason.toUpperCase();
+    document.getElementById('tags2').innerHTML=`
+      <span class="tag info">IF: ${d.iso_result}</span>
+      <span class="tag info">SVM: ${d.svm_result}</span>
+      <span class="tag">Confidence: ${d.confidence}%</span>
+    `;
+  }catch(e){hide('spin2');toast('ERROR: '+e.message);}
+}
+</script>
+</body>
+</html>
