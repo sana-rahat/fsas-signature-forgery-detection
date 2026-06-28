@@ -30,7 +30,14 @@ BS Cyber Forensics & Security | Air University Islamabad
 
 ## Screenshots
 
-![FSAS Dashboard - Genuine Detection](demo-screenshot.png)
+### Dataset analysis — genuine signature detected
+![Genuine](fsas-genuine.png)
+
+### Live detection — forged signature flagged
+![Forged](fsas-forged.png)
+
+### Biometric enrollment & verification
+![Enroll](fsas-enroll.png)
 
 ## Demo
 [Watch Demo Video](https://drive.google.com/file/d/1RkC16oQjcbu7o8OquzLxsi6sllVDheZ1/view?usp=sharing)
