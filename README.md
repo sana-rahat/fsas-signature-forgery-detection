@@ -25,5 +25,5 @@ stroke count etc.) and classifies signatures as
 GENUINE, FORGED, or UNCERTAIN.
 
 ## Author
-Sana Ashfaq Rahat | Air University Islamabad
-BS Cyber Security | 2nd Semester
+Sana Ashfaq Rahat  
+BS Cyber Forensics & Security | Air University Islamabad
