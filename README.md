@@ -28,5 +28,9 @@ GENUINE, FORGED, or UNCERTAIN.
 Sana Ashfaq Rahat  
 BS Cyber Forensics & Security | Air University Islamabad
 
+## Screenshots
+
+![FSAS Dashboard - Genuine Detection](demo-screenshot.png)
+
 ## Demo
 [Watch Demo Video](https://drive.google.com/file/d/1RkC16oQjcbu7o8OquzLxsi6sllVDheZ1/view?usp=sharing)
