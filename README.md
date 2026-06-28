@@ -31,7 +31,7 @@ BS Cyber Forensics & Security | Air University Islamabad
 ## Screenshots
 
 ### Dataset analysis — genuine signature detected
-![Genuine](fsas-genuine.png)
+![Genuine](fsas-geniune.png)
 
 ### Live detection — forged signature flagged
 ![Forged](fsas-forged.png)
