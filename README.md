@@ -39,5 +39,8 @@ BS Cyber Forensics & Security | Air University Islamabad
 ### Biometric enrollment & verification
 ![Enroll](fsas-enroll.png)
 
+## Documentation
+[Full Project Report (PDF)](https://github.com/sana-rahat/fsas-signature-forgery-detection/blob/main/forensic%20project%20%20report.pdf)
+
 ## Demo
 [Watch Demo Video](https://drive.google.com/file/d/1RkC16oQjcbu7o8OquzLxsi6sllVDheZ1/view?usp=sharing)
